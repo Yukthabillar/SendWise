@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String            @id @default(uuid())
+  google_id        String            @unique
+  name             String
+  email            String            @unique
+  avatar_url       String?
+  created_at       DateTime          @default(now())
+  updated_at       DateTime          @updatedAt
+  campaigns        Campaign[]
+  senders          Sender[]
+  slack_connection SlackConnection?
+  emails           Email[]
+}
+
+model Campaign {
+  id            String       @id @default(uuid())
+  user_id       String
+  user          User         @relation(fields: [user_id], references: [id])
+  subject       String
+  body          String
+  start_time    DateTime
+  delay_seconds Int
+  hourly_limit  Int
+  status        CampaignStatus @default(scheduled)
+  created_at    DateTime     @default(now())
+  updated_at    DateTime     @updatedAt
+  emails        Email[]
+}
+
+enum CampaignStatus {
+  scheduled
+  processing
+  completed
+  paused
+  failed
+}
+
+model Email {
+  id           String      @id @default(uuid())
+  campaign_id  String
+  campaign     Campaign    @relation(fields: [campaign_id], references: [id])
+  user_id      String
+  user         User        @relation(fields: [user_id], references: [id])
+  sender_id    String?
+  sender       Sender?     @relation(fields: [sender_id], references: [id])
+  recipient    String
+  subject      String
+  body         String
+  scheduled_at DateTime
+  sent_at      DateTime?
+  status       EmailStatus @default(scheduled)
+  attempts     Int         @default(0)
+  message_id   String?
+  error_message String?
+  created_at   DateTime    @default(now())
+  updated_at   DateTime    @updatedAt
+}
+
+enum EmailStatus {
+  scheduled
+  processing
+  sent
+  failed
+}
+
+model Sender {
+  id            String   @id @default(uuid())
+  user_id       String
+  user          User     @relation(fields: [user_id], references: [id])
+  email         String
+  smtp_host     String
+  smtp_port     Int
+  smtp_user     String
+  smtp_password String
+  hourly_limit  Int
+  created_at    DateTime @default(now())
+  emails        Email[]
+}
+
+model SlackConnection {
+  id           String   @id @default(uuid())
+  user_id      String   @unique
+  user         User     @relation(fields: [user_id], references: [id])
+  team_id      String
+  access_token String
+  channel_id   String
+  connected    Boolean  @default(true)
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+}
