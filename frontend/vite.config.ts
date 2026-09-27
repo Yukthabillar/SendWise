@@ -21,8 +21,4 @@ export default defineConfig({
       },
     },
   },
-
-  preview: {
-    allowedHosts: ['sendwisefrontend.onrender.com'],
-  },
 })
